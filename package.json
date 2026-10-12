@@ -1,0 +1,25 @@
+{
+  "name": "ryekit",
+  "version": "0.1.0",
+  "description": "Ryekit \u2014 a reverse-engineering Swiss Army knife: editor, terminal, disassembler, hex viewer.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0"
+  },
+  "dependencies": {
+    "capstone-wasm": "^1.0.3",
+    "monaco-editor": "^0.52.2",
+    "node-pty": "^1.1.0",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
+  },
+  "license": "MIT",
+  "author": "Hrishikesh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hrishikesh/ryekit.git"
+  }
+}

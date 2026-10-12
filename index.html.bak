@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' file:; img-src 'self' data:" />
+  <title>Electron Code</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <span class="folder-name" id="folder-name">No folder open</span>
+        <button id="open-folder-btn">Open Folder</button>
+      </div>
+      <div id="file-tree">
+        <div class="tree-empty">Click <b>Open Folder</b> to browse files.</div>
+      </div>
+    </aside>
+
+    <main id="editor-pane">
+      <div id="tab-bar">
+        <span id="dirty-dot"></span>
+        <span id="current-file">untitled</span>
+      </div>
+      <div id="editor-container"></div>
+      <div id="status">
+        <span class="msg" id="status-msg">Ready</span>
+        <span class="sep">|</span>
+        <span id="status-lang">Plain Text</span>
+        <span class="sep">|</span>
+        <span id="status-pos">Ln 1, Col 1</span>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var nodeRequire = window.require;
+  </script>
+  <script src="node_modules/monaco-editor/min/vs/loader.js"></script>
+  <script>
+    var amdRequire = window.require;
+    window.require = nodeRequire;
+  </script>
+  <script src="renderer.js"></script>
+</body>
+</html>

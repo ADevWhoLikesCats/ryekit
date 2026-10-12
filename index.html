@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' file:;
+                 script-src 'self' 'unsafe-eval' 'unsafe-inline' file: data: blob:;
+                 style-src 'self' 'unsafe-inline';
+                 font-src 'self' file: data:;
+                 img-src 'self' data: blob:;
+                 worker-src 'self' blob: data: file:;
+                 child-src 'self' blob: data: file:;
+                 connect-src 'self' file: data: blob:;" />
+  <title>Ryekit</title>
+  <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <span class="folder-name" id="folder-name">No folder open</span>
+        <button id="open-folder-btn">Open Folder</button>
+      </div>
+      <div id="file-tree">
+        <div class="tree-empty">Click <b>Open Folder</b> to browse files.</div>
+      </div>
+    </aside>
+
+    <main id="editor-pane">
+      <div id="tab-bar">
+        <span id="dirty-dot"></span>
+        <span id="current-file">untitled</span>
+      </div>
+      <div id="editor-container"></div>
+
+      <div id="status">
+        <span class="msg" id="status-msg">Ready</span>
+        <span class="sep">|</span>
+        <span id="status-lang">Plain Text</span>
+        <span class="sep">|</span>
+        <span id="status-pos">Ln 1, Col 1</span>
+      </div>
+
+      <!-- Bottom panel: VS Code style -->
+      <div id="panel-resizer" title="Drag to resize · Ctrl+` to toggle"></div>
+      <div id="panel" class="collapsed">
+        <div id="panel-tabs">
+          <div class="panel-tab-strip" id="panel-tab-strip"></div>
+          <div class="panel-actions">
+            <button id="panel-maximize" title="Maximize panel">⤢</button>
+            <button id="panel-close" title="Close panel (Ctrl+`)">×</button>
+          </div>
+        </div>
+        <div id="panel-body"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="monaco-shim.js"></script>
+
+  <!-- xterm FIRST, before Monaco's AMD loader touches window.define -->
+  <script src="node_modules/xterm/lib/xterm.js"></script>
+  <script src="node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+
+  <!-- Monaco's loader (this one puts an AMD `define` on window) -->
+  <script src="node_modules/monaco-editor/min/vs/loader.js"></script>
+  <script src="monaco-restore.js"></script>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

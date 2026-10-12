@@ -1,0 +1,454 @@
+@font-face {
+  font-family: 'Cascadia Code';
+  src: url('fonts/CascadiaCode.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Cascadia Code (bundled with the app) ─────────────── */
+:root {
+  --bg:           #0d1117;
+  --bg-elevated:  #161b22;
+  --bg-hover:     #1f242c;
+  --bg-active:    #1f6feb22;
+  --border:       #30363d;
+  --fg:           #e6edf3;
+  --fg-muted:     #8b949e;
+  --accent:       #58a6ff;
+  --accent-hover: #79c0ff;
+  --success:      #3fb950;
+  --danger:       #f85149;
+  --font-mono:    'Cascadia Code', ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-ui:      -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  height: 100vh;
+}
+
+#sidebar {
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#sidebar-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#sidebar-header .folder-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg);
+}
+
+#open-folder-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+#open-folder-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#file-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+  font-size: 13px;
+  user-select: none;
+}
+
+#file-tree::-webkit-scrollbar { width: 10px; }
+#file-tree::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 4px;
+  margin: 0 4px;
+  color: var(--fg);
+}
+.tree-item:hover { background: var(--bg-hover); }
+.tree-item.active {
+  background: var(--bg-active);
+  color: var(--accent);
+}
+
+.tree-item .icon {
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.tree-item .label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-empty {
+  padding: 20px 12px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+#editor-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg);
+}
+
+#tab-bar {
+  height: 38px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+
+#current-file {
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#dirty-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: none;
+  flex-shrink: 0;
+}
+#dirty-dot.visible { display: inline-block; }
+
+#editor-container {
+  flex: 1;
+  min-height: 0;
+}
+
+#status {
+  height: 24px;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  padding: 0 12px;
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+#status .sep { color: var(--border); }
+#status .msg { flex: 1; }
+#status .msg.error { color: var(--danger); }
+#status .msg.success { color: var(--success); }
+
+/* Binary files in the tree: dim, no pointer affordance */
+.tree-item.binary {
+  opacity: 0.45;
+  cursor: not-allowed;
+  font-style: italic;
+}
+.tree-item.binary:hover {
+  background: transparent;
+}
+
+/* ── Bottom panel (VS Code style) ─────────────────────── */
+#editor-pane {
+  position: relative;
+  overflow: hidden;
+}
+
+#panel-resizer {
+  height: 4px;
+  background: var(--border);
+  cursor: ns-resize;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+#panel-resizer:hover,
+#panel-resizer.dragging { background: var(--accent); }
+
+#panel {
+  height: 260px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 0;
+  transition: height 0.15s ease;
+}
+#panel.collapsed {
+  height: 0 !important;
+  border-top-color: transparent;
+}
+#panel.maximized {
+  height: calc(100% - 34px) !important;
+}
+#panel.hidden { display: none; }
+
+#panel-tabs {
+  height: 32px;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.panel-tab-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.panel-tab-strip::-webkit-scrollbar { height: 4px; }
+.panel-tab-strip::-webkit-scrollbar-thumb { background: var(--border); }
+
+.panel-tab {
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  border-right: 1px solid transparent;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.1s, border-color 0.1s;
+}
+.panel-tab:hover { color: var(--fg); }
+.panel-tab.active {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+}
+.panel-tab .badge {
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  line-height: 1;
+}
+.panel-tab .icon { font-size: 12px; opacity: 0.85; }
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+}
+.panel-actions button {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.panel-actions button:hover {
+  background: var(--bg-hover);
+  color: var(--fg);
+}
+
+#panel-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #0a0d12;
+}
+
+.panel-view {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}
+.panel-view[hidden] { display: none; }
+
+.panel-placeholder {
+  padding: 20px;
+  color: var(--fg-muted);
+  font-size: 12.5px;
+  font-family: var(--font-mono);
+}
+
+#terminal-container {
+  width: 100%;
+  height: 100%;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+#terminal-container .xterm {
+  height: 100%;
+}
+
+/* When maximized, hide the editor tab bar chrome behind */
+#panel.maximized ~ #panel-resizer { display: none; }
+
+/* ── Disassembly view ─────────────────────────────────── */
+.panel-view[data-view="disasm"] {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+}
+
+.disasm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.disasm-toolbar button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.disasm-toolbar button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.disasm-file   { color: var(--fg-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disasm-status { color: var(--fg-muted); }
+.disasm-status.error   { color: var(--danger); }
+.disasm-status.success { color: var(--success); }
+
+.disasm-viewport {
+  position: relative;      /* anchor for absolutely-positioned rows */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--fg);
+}
+.disasm-spacer { height: 0; }
+.disasm-rows {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  will-change: transform;
+}
+
+.disasm-row {
+  height: 20px;
+  display: grid;
+  grid-template-columns: 90px 140px 110px 1fr;
+  gap: 12px;
+  padding: 0 12px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.disasm-row:hover { background: var(--bg-hover); }
+.disasm-row .addr  { color: #6e7681; }
+.disasm-row .bytes { color: #484f58; letter-spacing: 0.04em; }
+
+/* ── Disassembly syntax colors (GitHub Dark palette) ─── */
+.disasm-row .mnemonic span { font-weight: 500; }
+
+/* mnemonic categories */
+.mn-flow   { color: #ff7b72; }   /* control flow: jmp, call, ret — red */
+.mn-stack  { color: #d2a8ff; }   /* push/pop — purple */
+.mn-arith  { color: #79c0ff; }   /* add/sub/cmp — blue */
+.mn-mov    { color: #56d4dd; }   /* mov/lea — cyan */
+.mn-vec    { color: #ffa657; }   /* SSE/AVX — orange */
+.mn-misc   { color: #8b949e; }   /* nop/hlt — grey */
+.mn-other  { color: #e6edf3; }   /* fallback */
+
+/* operands */
+.tk-reg   { color: #7ee787; }    /* registers — green */
+.tk-hex   { color: #ffa657; }    /* 0x… — orange */
+.tk-num   { color: #79c0ff; }    /* decimal — blue */
+.tk-str   { color: #a5d6ff; }    /* strings — pale blue */
+.tk-sym   { color: #d2a8ff; }    /* symbol refs — purple */
+.tk-mem   { color: #8b949e; }    /* brackets — grey */
+.tk-size  { color: #6e7681; font-style: italic; } /* byte/word/dword/… */
+.tk-rip   { color: #ffa657; text-decoration: underline dotted; }
+
+/* address & byte columns */
+.disasm-row .addr { color: #6e7681; }
+.disasm-row .bytes { color: #484f58; letter-spacing: 0.04em; }
