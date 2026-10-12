@@ -197,6 +197,27 @@ ipcMain.handle('dialog:saveAs', async (_e, content) => {
 });
 
 
+
+// ── Hex viewer: read a byte range from a file ───────────
+// Returns { ok, bytes: Uint8Array, size, offset } or { ok: false, error }
+ipcMain.handle('fs:readBytes', async (_e, filePath, offset = 0, length = 65536) => {
+  try {
+    const fh = await fs.open(filePath, 'r');
+    try {
+      const stat = await fh.stat();
+      const size = stat.size;
+      const buf = Buffer.alloc(length);
+      const { bytesRead } = await fh.read(buf, 0, length, offset);
+      // Return a transferable Uint8Array — Electron serializes this efficiently
+      return { ok: true, bytes: buf.subarray(0, bytesRead), size, offset };
+    } finally {
+      await fh.close();
+    }
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
 // ── Binary sniffing ─────────────────────────────────────
 // Reads the first 8 KB and decides if the file looks binary.
 // Rules (in order):
@@ -285,6 +306,18 @@ function ensureDisasmWorker() {
 
   return disasmWorker;
 }
+
+
+// Parse-only entry: returns binary structure (sections, symbols, entry)
+ipcMain.handle('disasm:parse', (event, payload) => {
+  const wc = ensureDisasmWorker();
+  const id = payload.id || `parse-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  disasmJobs.set(id, event.sender.id);
+  const msg = { ...payload, id, action: 'parse' };
+  if (!disasmWorkerReady) wc.once('spawn', () => wc.postMessage(msg));
+  else wc.postMessage(msg);
+  return id;
+});
 
 ipcMain.handle('disasm:start', (event, payload) => {
   const wc = ensureDisasmWorker();

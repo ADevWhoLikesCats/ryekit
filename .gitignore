@@ -62,3 +62,6 @@ desktop.ini
 fonts/*.zip
 fonts/*.ttf
 fonts/*.otf
+*.bak
+*.bak2
+renderer.js.bak*

@@ -111,6 +111,46 @@ function resolveArchMode(info) {
 }
 
 
+
+// ── Binary structure parsing via LIEF ───────────────────
+function parseBinaryStructure(filePath) {
+  const lief = require('node-lief');
+  const isELF = filePath.endsWith('.so') || filePath.endsWith('.elf') ||
+                /^ELF/.test(require('fs').readFileSync(filePath, { length: 4 }).toString('hex'));
+  // Try each format in order
+  let bin = null, format = null;
+  try { bin = lief.ELF.parse(filePath); format = 'ELF'; } catch {}
+  if (!bin) { try { bin = lief.PE.parse(filePath); format = 'PE'; } catch {} }
+  if (!bin) { try { bin = lief.MachO.parse(filePath); format = 'Mach-O'; } catch {} }
+  if (!bin) throw new Error('Could not parse binary format');
+
+  // Sections: name, VA, offset, size, flags
+  const sections = (bin.sections || []).map((s) => ({
+    name: s.name,
+    virtualAddress: Number(s.virtualAddress ?? s.virtual_address ?? 0),
+    fileOffset: Number(s.fileOffset ?? s.file_offset ?? 0),
+    size: Number(s.size ?? s.virtual_size ?? 0),
+    entropy: typeof s.entropy === 'function' ? s.entropy() : (s.entropy ?? null),
+    isCode: typeof s.has === 'function' && s.has(lief.ELF.SECTION_FLAGS.EXECINSTR),
+  }));
+
+  // Symbols: name, addr, size, type
+  const symbols = (bin.symbols || []).slice(0, 5000).map((sym) => ({
+    name: sym.name || `sym_${sym.value?.toString(16)}`,
+    address: Number(sym.value ?? 0),
+    size: Number(sym.size ?? 0),
+    type: sym.type !== undefined ? String(sym.type) : 'unknown',
+    isFunction: !!(sym.isFunction || sym.is_function),
+    isImport: !!(sym.isImport || sym.is_import),
+    isExport: !!(sym.isExport || sym.is_export),
+  }));
+
+  // Entry point
+  const entry = Number(bin.entrypoint ?? bin.entry_point ?? 0);
+
+  return { format, entry, sections, symbols };
+}
+
 // ── Message loop ───────────────────────────────────────
 process.parentPort.on('message', async (e) => {
   const msg = e.data;
@@ -120,16 +160,33 @@ process.parentPort.on('message', async (e) => {
     baseAddr = 0x1000,
     maxInsns = 200000,
     chunkSize = 5000,
+    action = 'disasm',
   } = msg;
 
   const post = (payload) => process.parentPort.postMessage({ id, ...payload });
+
+  // ── Parse-only job (section + symbol extraction) ──
+  if (action === 'parse') {
+    try {
+      const structure = parseBinaryStructure(filePath);
+      post({ type: 'structure', structure });
+      post({ type: 'done', total: 0, elapsed: 0 });
+    } catch (err) {
+      post({ type: 'error', error: err.message || String(err) });
+    }
+    return;
+  }
 
   try {
     if (!fs.existsSync(filePath)) {
       return post({ type: 'error', error: `File not found: ${filePath}` });
     }
 
-    const bytes = fs.readFileSync(filePath);
+    let bytes = fs.readFileSync(filePath);
+    // If the caller scoped us to a byte range (e.g. one section), slice it.
+    if (msg.offset !== undefined && msg.length !== undefined) {
+      bytes = bytes.subarray(msg.offset, msg.offset + msg.length);
+    }
     const info = sniff(bytes);
     if (info.error) {
       return post({ type: 'error', error: info.error });

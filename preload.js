@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   readTree:   (dir) => ipcRenderer.invoke('fs:readTree', dir),
   readFile:   (p) => ipcRenderer.invoke('fs:readFile', p),
   isBinary:   (p) => ipcRenderer.invoke('fs:isBinary', p),
+  readBytes:  (p, off, len) => ipcRenderer.invoke('fs:readBytes', p, off, len),
   writeFile:  (p, c) => ipcRenderer.invoke('fs:writeFile', p, c),
   saveAs:     (c) => ipcRenderer.invoke('dialog:saveAs', c),
 
@@ -53,6 +54,7 @@ contextBridge.exposeInMainWorld('api', {
   // Disassembler
   disasm: {
     start: (payload) => ipcRenderer.invoke('disasm:start', payload),
+    parse: (payload) => ipcRenderer.invoke('disasm:parse', payload),
     onEvent: (cb) => {
       const h = (_e, data) => cb(data);
       ipcRenderer.on('disasm:event', h);
